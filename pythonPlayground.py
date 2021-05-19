@@ -1,8 +1,8 @@
 
 import curses
-import subprocess
 import os
 import sys
+import requests
 from datetime import datetime
 
 idBase = ""
@@ -40,6 +40,7 @@ def main(argv):
         sys.stderr.write(message + "\n")
         sys.exit(1)
  
+    # checking if valid currency base
     if idBase not in rateMapping.keys():
         sys.stderr.write("\033[1m" + "Error: " + "\033[0m" + "invalid mapping " + str(idBase) +  "\n")
         sys.exit(1)
@@ -48,6 +49,8 @@ def main(argv):
     sys.exit(0)
 
 def cursesMain(window):
+    global idBase
+
     window.nodelay(True)   # enable refreshing  
     maxX = window.getmaxyx()[0]
     maxY = window.getmaxyx()[1]
@@ -57,24 +60,39 @@ def cursesMain(window):
     for i in range(63):
         bar += "-"
 
-    global idBase
+    refreshRate = 840   # fourteen minutes
+    timeElapsed = refreshRate
     while (True):
         window.timeout(1000)        # block every second
 
         # crypto base (top left)
-        window.addstr(0, 0, "Currency: ", curses.A_BOLD)
-        window.addstr(0, len("Currency: "), rateMapping.get(idBase) + " (" + idBase + ")")
+        window.addstr(1, 1, "Currency: ", curses.A_BOLD)
+        window.addstr(1, 11, rateMapping.get(idBase) + " (" + idBase + ")")
 
-        # date and time (top right)
-        date = getTime()[0]
-        time = getTime()[1]
-        window.addstr(0, maxY - len(date), date)
-        window.addstr(1, maxY - len(time), time)
-        window.refresh()
+        # refresh rate (left of crypto base)
+        window.addstr(1, 31, "Refresh Rate: ", curses.A_BOLD)
+        window.addstr(1, 45, str(int(refreshRate / 60)) + " minutes")
+        window.addstr(2, 45, "(" + str(int(refreshRate)) + " seconds)")
+
+        # time elapsed
+        window.addstr(1, 61, "Time Elapsed: ", curses.A_BOLD)
+        window.addstr(1, 75, str(timeElapsed) + " / " + str(refreshRate) + " seconds")
+        window.addstr(2, 75, str(round(timeElapsed / refreshRate, 4) * 100) + " %")
+        timeElapsed -= 1
+        if (timeElapsed < 0):
+            timeElapsed = refreshRate
 
         # drawing table labels
-        window.addstr(4, 0, "Date\t\tTime\t\tPrice (USD)\t\tStatus")
-        window.addstr(5, 0, bar)
+        window.addstr(3, 1, "Date           Time           Rate (USD)           Status", curses.A_BOLD)
+        window.addstr(4, 1, bar, curses.A_BOLD)
+
+        # drawing first row
+        date = getTime()[0]
+        time = getTime()[1]
+        window.addstr(5, 1, date)
+        window.addstr(5, len(date) + 1, "\t" + time)
+        window.addstr(5, len(date) + 1 + len(time) + len("         "), "10")
+
 
         # quit (bottom left)
         window.addstr(maxX - 1, 0, "(QUIT)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
