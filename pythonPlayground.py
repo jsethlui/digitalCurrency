@@ -3,6 +3,7 @@ import curses
 import os
 import sys
 import requests
+from time import sleep
 from datetime import datetime
 
 idBase = ""
@@ -33,7 +34,7 @@ def main(argv):
         global idBase
         idBase = sys.argv[1]                # id base
     except IndexError:          # when no argument specified
-        message  = "\033[1m" + "Usage: " + "\033[0m" + str(sys.argv[0]) + " "       # with bold formatting
+        message  = "\033[1m" + "Usage: " + "\033[0m" + "pythonPlayground "
         for key in rateMapping.keys():
             temp  = "[" + str(key) + "] "
             message += temp
@@ -54,6 +55,7 @@ def cursesMain(window):
     window.nodelay(True)   # enable refreshing  
     maxX = window.getmaxyx()[0]
     maxY = window.getmaxyx()[1]
+    currentRow = 5
 
     # instantiating bar
     bar = ""
@@ -62,6 +64,11 @@ def cursesMain(window):
 
     refreshRate = 840   # fourteen minutes
     timeElapsed = refreshRate
+
+    # sync up with real time
+    sleepTime = 1 - datetime.now().second % 1
+    sleep(sleepTime * 60)
+
     while (True):
         window.timeout(1000)        # block every second
 
@@ -86,12 +93,15 @@ def cursesMain(window):
         window.addstr(3, 1, "Date           Time           Rate (USD)           Status", curses.A_BOLD)
         window.addstr(4, 1, bar, curses.A_BOLD)
 
-        # drawing first row
+        # drawing rows
         date = getTime()[0]
         time = getTime()[1]
-        window.addstr(5, 1, date)
-        window.addstr(5, len(date) + 1, "\t" + time)
-        window.addstr(5, len(date) + 1 + len(time) + len("         "), "10")
+        window.addstr(currentRow, 1, date)
+        window.addstr(currentRow, len(date) + 1, "\t" + time)
+        window.addstr(currentRow, len(date) + 1 + len(time) + len("         "), "10")
+        currentRow += 1
+        if (currentRow == 23):   # 20 + 3 = 23
+            currentRow = 5
 
 
         # quit (bottom left)
