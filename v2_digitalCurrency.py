@@ -80,12 +80,56 @@ def main(argv):
     curses.wrapper(cursesMain)
     sys.exit(0)
 
+def cursesSettings(window):
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+    window.bkgd(1, curses.color_pair(1))
+    window.refresh()
+    window.clear()
+
+    # # drawing border
+    # for row in range(15):
+    #     for col in range(10):
+    #         window.addstr((curses.LINES // 2) - 2, (curses.COLS // 2) - 1, "-")
+    #     window.addstr((curses.LINES // 2) - 2, (curses.COLS // 2) - 1, "|")
+
+    # settings title
+    window.addstr((curses.LINES // 2) - 10, (curses.COLS // 2) - (len("Settings") // 2), "Settings", curses.A_BOLD)
+
+    # back to main window
+    window.addstr(curses.LINES - 1, 0, "(BACK)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
+
+    # quit
+    window.addstr(curses.LINES - 1, curses.COLS - 7, "(QUIT)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
+
+    while (True):
+        userChar = window.getch()
+
+        # select menu
+        if (userChar == curses.KEY_UP):
+            window.addstr((curses.LINES // 2) - 8, (curses.COLS // 2) - (len("Add API Key") // 2), "Add API Key", curses.A_BOLD)
+        else:
+            window.addstr((curses.LINES // 2) - 8, (curses.COLS // 2) - (len("Add API Key") // 2), "Add API Key")
+        if (userChar == curses.KEY_DOWN):
+            window.addstr((curses.LINES // 2) - 7, (curses.COLS // 2) - (len("Do Something") // 2), "Do Something", curses.A_BOLD)
+        else:
+            window.addstr((curses.LINES // 2) - 7, (curses.COLS // 2) - (len("Do Something") // 2), "Do Something")
+
+        # for going back or quitting
+        if (userChar == ord("b") or (userChar == ord("B"))):
+            curses.wrapper(cursesMain)
+            break
+        elif (userChar == ord("q") or (userChar == ord("Q"))):
+            curses.endwin()
+            break
+
 def cursesMain(window):
     global idBase
     global userHasKey
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
     window.bkgd(1, curses.color_pair(1))
     window.nodelay(True)        # enable refreshing  
+    window.refresh()
+    window.clear()
     currentRow = 6
 
     # instantiating bar
@@ -96,27 +140,36 @@ def cursesMain(window):
     refreshRate = 840   # fourteen minutes
     timeElapsed = refreshRate
 
-    # to sync
-    t.sleep(1 - (t.time() % 1))
-
     # drawing table labels
     window.addstr(5, 1, " Date           Time           Rate (USD)           Status", curses.A_BOLD)
     window.addstr(6, 1, bar, curses.A_BOLD)
+
+    # user info
+    if ((userHasKey == False) and (apiKey != "")):
+        window.addstr(0, curses.COLS - 12, "Default Key", curses.A_BOLD)
+    elif ((userHasKey == True) and (apiKey == "")):
+        window.addstr(0, curses.COLS - 15, "Registered Key", curses.A_BOLD)
+
+    # crypto base 
+    window.addstr(2, 1, "Currency: ", curses.A_BOLD)
+    window.addstr(2, 11, rateMapping.get(idBase) + " (" + idBase + ")")
+    
+    # refresh rate
+    window.addstr(2, 31, "Refresh Rate: ", curses.A_BOLD)
+
+    # settings 
+    window.addstr(curses.LINES - 1, curses.COLS - 11, "(SETTINGS)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
+
+    # quit
+    window.addstr(curses.LINES - 1, 0, "(QUIT)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
+    window.refresh()    
+
+    # to sync up with real time
+    t.sleep(1 - (t.time() % 1))
     while (True):
         window.timeout(1000)        # block every second
 
-        # user info
-        if ((userHasKey == False) and (apiKey != "")):
-            window.addstr(0, curses.COLS - 12, "Default Key", curses.A_BOLD)
-        elif ((userHasKey == True) and (apiKey == "")):
-            window.addstr(0, curses.COLS - 15, "Registered Key", curses.A_BOLD)
-
-        # crypto base 
-        window.addstr(2, 1, "Currency: ", curses.A_BOLD)
-        window.addstr(2, 11, rateMapping.get(idBase) + " (" + idBase + ")")
-
         # refresh rate
-        window.addstr(2, 31, "Refresh Rate: ", curses.A_BOLD)
         window.addstr(2, 45, str(int(refreshRate)) + " seconds")
         window.addstr(3, 45, "(" + str(int(refreshRate / 60)) + " minutes)")
 
@@ -131,28 +184,21 @@ def cursesMain(window):
         # drawing rows (for debugging purposes)
         date = getTime()[0]
         time = getTime()[1]
-        window.addstr(currentRow + 1, 2, date)
-        window.addstr(currentRow + 1, len(date) + 6, time)
-        window.addstr(currentRow + 1, len(date) + 11 + len(time), "10")
+        window.addstr(currentRow + 1, 3, date)
+        window.addstr(currentRow + 1, len(date) + 5, time)
+        window.addstr(currentRow + 1, len(date) + 10 + len(time), "10")
         currentRow += 1
         if (currentRow == (6 + 3)):
             currentRow = 6
             window.clrtobot()
             window.refresh()
 
-        # settings 
-        window.addstr(curses.LINES - 1, curses.COLS - 11, "(SETTINGS)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
-
-        # quit
-        window.addstr(curses.LINES - 1, 0, "(QUIT)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
-        window.refresh()
         userChar = window.getch()
-
         if (userChar == ord("q") or (userChar == ord("Q"))):
             curses.endwin()
             break
         elif (userChar == ord("s") or (userChar == ord("S"))):
-            curses.endwin()
+            curses.wrapper(cursesSettings)
             break
 
 if __name__ == "__main__":
