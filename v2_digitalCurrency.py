@@ -83,44 +83,49 @@ def main(argv):
 def cursesSettings(window):
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
     window.bkgd(1, curses.color_pair(1))
-    window.refresh()
     window.clear()
+    window.refresh()
 
-    # # drawing border
-    # for row in range(15):
-    #     for col in range(10):
-    #         window.addstr((curses.LINES // 2) - 2, (curses.COLS // 2) - 1, "-")
-    #     window.addstr((curses.LINES // 2) - 2, (curses.COLS // 2) - 1, "|")
-
-    # settings title
-    window.addstr((curses.LINES // 2) - 10, (curses.COLS // 2) - (len("Settings") // 2), "Settings", curses.A_BOLD)
+    # drawing border
+    borderHeight = 20
+    borderWidth = 30
+    border = curses.newwin(borderHeight, borderWidth, (curses.LINES // 2) - (borderHeight // 2), (curses.COLS // 2) - (borderWidth // 2))
+    border.box()
+    border.addstr((borderHeight // 2) - 7, (borderWidth // 2) - (len("Settings") // 2), "Settings", curses.A_BOLD)
+    border.refresh()
 
     # back to main window
-    window.addstr(curses.LINES - 1, 0, "(BACK)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
+    window.addstr(curses.LINES - 1, curses.COLS - 7, "(BACK)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
 
     # quit
-    window.addstr(curses.LINES - 1, curses.COLS - 7, "(QUIT)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
+    window.addstr(curses.LINES - 1, 0, "(QUIT)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
 
+    # keys == number option, value == corresponding option
+    options = {1: "Add API Key", 2: "Toggle SMS"}
+    optionNum = 1
     while (True):
         userChar = window.getch()
 
         # select menu
         if (userChar == curses.KEY_UP):
-            window.addstr((curses.LINES // 2) - 8, (curses.COLS // 2) - (len("Add API Key") // 2), "Add API Key", curses.A_BOLD)
+            border.addstr((borderHeight // 2) - 4, (borderWidth // 2) - (len("Add API Key") // 2) - 1, "Add API Key", curses.A_BOLD | curses.A_STANDOUT)
         else:
-            window.addstr((curses.LINES // 2) - 8, (curses.COLS // 2) - (len("Add API Key") // 2), "Add API Key")
+            border.addstr((borderHeight // 2) - 4, (borderWidth // 2) - (len("Add API Key") // 2) - 1, "Add API Key")
         if (userChar == curses.KEY_DOWN):
-            window.addstr((curses.LINES // 2) - 7, (curses.COLS // 2) - (len("Do Something") // 2), "Do Something", curses.A_BOLD)
+            border.addstr((borderHeight // 2) - 2, (borderWidth // 2) - (len("Do Something") // 2) - 1, "Do Something", curses.A_BOLD | curses.A_STANDOUT)
         else:
-            window.addstr((curses.LINES // 2) - 7, (curses.COLS // 2) - (len("Do Something") // 2), "Do Something")
+            border.addstr((borderHeight // 2) - 2, (borderWidth // 2) - (len("Do Something") // 2) - 1, "Do Something")
 
-        # for going back or quitting
+        # going back or quitting
         if (userChar == ord("b") or (userChar == ord("B"))):
             curses.wrapper(cursesMain)
             break
         elif (userChar == ord("q") or (userChar == ord("Q"))):
             curses.endwin()
             break
+        if (userChar == curses.KEY_ENTER):
+            pass
+        border.refresh()
 
 def cursesMain(window):
     global idBase
@@ -155,14 +160,7 @@ def cursesMain(window):
     window.addstr(2, 11, rateMapping.get(idBase) + " (" + idBase + ")")
     
     # refresh rate
-    window.addstr(2, 31, "Refresh Rate: ", curses.A_BOLD)
-
-    # settings 
-    window.addstr(curses.LINES - 1, curses.COLS - 11, "(SETTINGS)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
-
-    # quit
-    window.addstr(curses.LINES - 1, 0, "(QUIT)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
-    window.refresh()    
+    window.addstr(2, 31, "Refresh Rate: ", curses.A_BOLD)  
 
     # to sync up with real time
     t.sleep(1 - (t.time() % 1))
@@ -193,6 +191,12 @@ def cursesMain(window):
             window.clrtobot()
             window.refresh()
 
+        # settings 
+        window.addstr(curses.LINES - 1, curses.COLS - 11, "(SETTINGS)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
+
+        # quit
+        window.addstr(curses.LINES - 1, 0, "(QUIT)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
+
         userChar = window.getch()
         if (userChar == ord("q") or (userChar == ord("Q"))):
             curses.endwin()
@@ -200,6 +204,7 @@ def cursesMain(window):
         elif (userChar == ord("s") or (userChar == ord("S"))):
             curses.wrapper(cursesSettings)
             break
+        window.refresh()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
