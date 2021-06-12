@@ -16,20 +16,6 @@ rateMapping = {"DOGE": "Dogecoin",
                 "BTC": "Bitcoin", 
                 "LTC": "Litecoin"}              
 
-def checkModules():
-    try:
-        print("asdf")
-        # import curses
-        # import os
-        # import sys
-        # import requests
-        # import time as t
-        # import subprocess
-        # from datetime import datetime
-        # from firebase_admin import db 
-    except ImportError:
-        pass
-
 def getCryptoCurrencyPrice(cryptoBase):
     url = "https://rest.coinapi.io/v1/exchangerate/" + str(cryptoBase) + "/USD"
     header = {"X-CoinAPI-Key": apiKey}
@@ -94,6 +80,11 @@ def cursesSettings(window):
     border.addstr((borderHeight // 2) - 7, (borderWidth // 2) - (len("Settings") // 2), "Settings", curses.A_BOLD)
     border.refresh()
 
+    # drawing input border (for API key)
+    inputBorder = curses.newwin(2, borderWidth, (curses.LINES // 2) + (borderHeight // 2), (curses.COLS // 2) - (borderWidth // 2))
+    inputBorder.box()
+    inputBorder.refresh()
+
     # back to main window
     window.addstr(curses.LINES - 1, curses.COLS - 7, "(BACK)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
 
@@ -112,9 +103,9 @@ def cursesSettings(window):
         else:
             border.addstr((borderHeight // 2) - 4, (borderWidth // 2) - (len("Add API Key") // 2) - 1, "Add API Key")
         if (userChar == curses.KEY_DOWN):
-            border.addstr((borderHeight // 2) - 2, (borderWidth // 2) - (len("Do Something") // 2) - 1, "Do Something", curses.A_BOLD | curses.A_STANDOUT)
+            border.addstr((borderHeight // 2) - 3, (borderWidth // 2) - (len("Do Something") // 2) - 1, "Do Something", curses.A_BOLD | curses.A_STANDOUT)
         else:
-            border.addstr((borderHeight // 2) - 2, (borderWidth // 2) - (len("Do Something") // 2) - 1, "Do Something")
+            border.addstr((borderHeight // 2) - 3, (borderWidth // 2) - (len("Do Something") // 2) - 1, "Do Something")
 
         # going back or quitting
         if (userChar == ord("b") or (userChar == ord("B"))):
@@ -124,7 +115,7 @@ def cursesSettings(window):
             curses.endwin()
             break
         if (userChar == curses.KEY_ENTER):
-            pass
+                window.move((curses.LINES // 2) + (borderHeight // 2), (curses.COLS // 2) - (borderWidth // 2))
         border.refresh()
 
 def cursesMain(window):
@@ -137,13 +128,13 @@ def cursesMain(window):
     window.clear()
     currentRow = 6
 
+    refreshRate = 840   # fourteen minutes
+    timeElapsed = refreshRate
+
     # instantiating bar
     bar = ""
     for i in range(63):
         bar += "-"
-
-    refreshRate = 840   # fourteen minutes
-    timeElapsed = refreshRate
 
     # drawing table labels
     window.addstr(5, 1, " Date           Time           Rate (USD)           Status", curses.A_BOLD)
@@ -175,6 +166,7 @@ def cursesMain(window):
         window.addstr(2, 61, "Time Elapsed: ", curses.A_BOLD)
         window.addstr(2, 75, str(timeElapsed) + " / " + str(refreshRate) + " seconds")
         window.addstr(3, 75, str(round(timeElapsed / refreshRate, 4) * 100) + " %")
+        window.refresh()
         timeElapsed -= 1
         if (timeElapsed < 0):
             timeElapsed = refreshRate
