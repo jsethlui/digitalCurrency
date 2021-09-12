@@ -5,9 +5,11 @@ import sys
 import requests
 import time as t
 import pyrebase
+import random
 from datetime import datetime
 
 # global data
+DEBUG = True
 idBase = ""
 apiKey = ""
 userHasKey = False
@@ -23,7 +25,7 @@ def getCryptoCurrencyPrice(cryptoBase):
     responseJson = response.json()
     statusCode = response.status_code
     if (statusCode == 429):   # too many requests
-        sys.stderr.write(Color.FAIL + "Error: " + Color.END + "max requests exceeded (status code = " + str(statusCode) + ")\n")
+        sys.stderr.write("\033[1m" + "Error: " + "\033[0m" + "max requests exceeded (status code = " + str(statusCode) + ")\n")
         sys.exit(1)
     return responseJson
 
@@ -48,7 +50,7 @@ def getTime():
 def main(argv):
     try:
         global idBase
-        idBase = sys.argv[1]                # id base
+        idBase = sys.argv[1]    # id base
     except IndexError:          # when no argument specified
         message  = "\033[1m" + "Usage: " + "\033[0m" + "pythonPlayground "
         for key in rateMapping.keys():
@@ -103,9 +105,9 @@ def cursesSettings(window):
         else:
             border.addstr((borderHeight // 2) - 4, (borderWidth // 2) - (len("Add API Key") // 2) - 1, "Add API Key")
         if (userChar == curses.KEY_DOWN):
-            border.addstr((borderHeight // 2) - 3, (borderWidth // 2) - (len("Do Something") // 2) - 1, "Do Something", curses.A_BOLD | curses.A_STANDOUT)
+            border.addstr((borderHeight // 2) - 3, (borderWidth // 2) - (len("Change Cryptocurrency") // 2) - 1, "Change Cryptocurrency", curses.A_BOLD | curses.A_STANDOUT)
         else:
-            border.addstr((borderHeight // 2) - 3, (borderWidth // 2) - (len("Do Something") // 2) - 1, "Do Something")
+            border.addstr((borderHeight // 2) - 3, (borderWidth // 2) - (len("Change Cryptocurrency") // 2) - 1, "Change Cryptocurrency")
 
         # going back or quitting
         if (userChar == ord("b") or (userChar == ord("B"))):
@@ -137,7 +139,7 @@ def cursesMain(window):
         bar += "-"
 
     # drawing table labels
-    window.addstr(5, 1, " Date           Time           Rate (USD)           Status", curses.A_BOLD)
+    window.addstr(5, 1, "   Date           Time           Rate (USD)           Status", curses.A_BOLD)
     window.addstr(6, 1, bar, curses.A_BOLD)
 
     # user info
@@ -166,22 +168,36 @@ def cursesMain(window):
         window.addstr(2, 61, "Time Elapsed: ", curses.A_BOLD)
         window.addstr(2, 75, str(timeElapsed) + " / " + str(refreshRate) + " seconds")
         window.addstr(3, 75, str(round(timeElapsed / refreshRate, 4) * 100) + " %")
-        window.refresh()
         timeElapsed -= 1
         if (timeElapsed < 0):
             timeElapsed = refreshRate
 
-        # drawing rows (for debugging purposes)
+        # displaying bitcoin price
         date = getTime()[0]
         time = getTime()[1]
+
+        # for debugging only
+        if (DEBUG == False):
+            cryptoPrice = str(getCryptoCurrencyPrice(idBase)["rate"])
+        else:
+            cryptoPrice = str(10)
+
         window.addstr(currentRow + 1, 3, date)
-        window.addstr(currentRow + 1, len(date) + 5, time)
-        window.addstr(currentRow + 1, len(date) + 10 + len(time), "10")
+        window.addstr(currentRow + 1, len(date) + 7, time)
+        window.addstr(currentRow + 1, len(date) + 13 + len(time), cryptoPrice)
         currentRow += 1
         if (currentRow == (6 + 3)):
             currentRow = 6
             window.clrtobot()
             window.refresh()
+
+        # status (either unchanged or changed)
+        before = random.randint(5, 15)
+        current = float(cryptoPrice)
+        status = "UNCHANGED"
+        if (before > current):
+            status = "CHANGED (Δ" + str(abs(current - before)) + ")"
+        window.addstr(currentRow + 1, len(date) + 33 + len(time), status)
 
         # settings 
         window.addstr(curses.LINES - 1, curses.COLS - 11, "(SETTINGS)", curses.A_BOLD | curses.A_REVERSE | curses.A_STANDOUT)
